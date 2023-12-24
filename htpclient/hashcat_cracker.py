@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import psutil
 from queue import Queue, Empty
+import re
 import string
 import subprocess
 from threading import Thread, Lock
@@ -651,6 +652,9 @@ class HashcatCracker:
 
             # Replace #HL# with the real hashlist
             attackcmd = attackcmd.replace(task['hashlistAlias'], f'"{hashlist_path}"')
+            attackcmd = re.sub(r'--increment(\s+|$)', '', attackcmd)
+            attackcmd = re.sub(r'--increment-(max|min)(=\S+|\s+\S+)?\s*', '', attackcmd)
+            attackcmd = attackcmd.replace('--', f'"{hashlist_path}"')
 
             args.append(attackcmd)
             args.append(task['cmdpars'])
