@@ -41,7 +41,7 @@ class Download:
             sys.stdout.write("\n")
             return True
         except requests.exceptions.ConnectionError as e:
-            logging.error("Download error: " + str(e))
+            logging.error("Download error: %s", e)
             sleep(30)
             return False
 
