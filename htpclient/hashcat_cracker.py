@@ -47,9 +47,9 @@ class HashcatCracker:
 
         try:
             logging.debug(f"CALL: {' '.join(cmd)}")
-            output = subprocess.check_output(cmd, cwd=self.cracker_path)
+            output = subprocess.check_output(cmd, cwd=self.cracker_path, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            logging.error("Error during version detection: " + str(e))
+            logging.error("Error during version detection: %s", e.stdout)
             time.sleep(5)
         self.version_string = output.decode().replace('v', '')
 
@@ -444,6 +444,7 @@ class HashcatCracker:
             return self.prince_keyspace(task.get_task(), chunk)
         elif 'usePreprocessor' in task.get_task() and task.get_task()['usePreprocessor']:
             return self.preprocessor_keyspace(task, chunk)
+
         task = task.get_task()  # TODO: refactor this to be better code
         files = update_files(task['attackcmd'])
         files = files.replace(task['hashlistAlias'] + " ", "")
@@ -458,7 +459,7 @@ class HashcatCracker:
             logging.debug(f"CALL: {full_cmd}")
             output = subprocess.check_output(full_cmd, shell=True, cwd=self.cracker_path, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            logging.error("Error during keyspace measure: " + str(e) + " Output: " + output.decode(encoding='utf-8'))
+            logging.error("Error during keyspace measure: %s\nOutput: %s", str(e), e.stdout)
             send_error("Keyspace measure failed!", self.config.get_value('token'), task['taskId'], None)
             time.sleep(5)
             return False
@@ -669,14 +670,16 @@ class HashcatCracker:
         full_cmd = ' '.join(args)
         full_cmd = f"{self.callPath} {full_cmd}"
 
+        # Run the benchmark.
         output = b''
         try:
             logging.debug(f"CALL: {''.join(full_cmd)}")
             output = subprocess.check_output(full_cmd, shell=True, cwd=self.cracker_path, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            logging.error("Error during speed benchmark, return code: " + str(e.returncode) + " Output: " + output.decode(encoding='utf-8'))
+            logging.error("Error during speed benchmark, return code: %d Output:\n\n%s", e.returncode, e.stdout")
             send_error("Speed benchmark failed!", self.config.get_value('token'), task['taskId'], None)
             return 0
+
         output = output.decode(encoding='utf-8').replace("\r\n", "\n").split("\n")
         benchmark_sum = [0, 0]
         for line in output:

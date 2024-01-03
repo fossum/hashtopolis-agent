@@ -122,9 +122,9 @@ class GenericCracker:
             full_cmd = full_cmd.replace("/", '\\')
         try:
             logging.debug("CALL: " + full_cmd)
-            output = subprocess.check_output(full_cmd, shell=True, cwd=self.config.get_value('files-path'))
+            output = subprocess.check_output(full_cmd, shell=True, stderr=subprocess.STDOUT, cwd=self.config.get_value('files-path'))
         except subprocess.CalledProcessError as e:
-            logging.error("Error during keyspace measurement: " + str(e))
+            logging.error("Error during keyspace measurement: %s", e.stdout)
             send_error("Keyspace measure failed!", self.config.get_value('token'), task['taskId'], None)
             sleep(5)
             return False

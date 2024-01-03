@@ -26,5 +26,5 @@ class JsonRequest:
             logging.debug(r.content)
             return r.json()
         except Exception as e:
-            logging.error("Error occurred: " + str(e))
+            logging.error("Error occurred: %s", e)
             return None
