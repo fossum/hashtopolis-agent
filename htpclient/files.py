@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import time
 from time import sleep
@@ -78,30 +79,30 @@ class Files:
                 if os.path.isfile(file_localpath) and os.stat(file_localpath).st_size == file_size:
                     logging.debug("File is present on agent and has matching file size.")
                     continue
-                
+
                 # Multicasting configured
                 elif self.config.get_value('multicast'):
                     logging.debug("Multicast is enabled, need to wait until it was delivered!")
                     sleep(5)  # in case the file is not there yet (or not completely), we just wait some time and then try again
                     return False
-                
+
                 # TODO: we might need a better check for this
                 if os.path.isfile(txt_file):
                     continue
-                
+
                 # Rsync
                 if self.config.get_value('rsync') and Initialize.get_os() != 1:
-                    Download.rsync(Path(self.config.get_value('rsync-path'), file), file_localpath) 
+                    Download.rsync(Path(self.config.get_value('rsync-path'), file), file_localpath)
                 else:
                     logging.debug("Starting download of file from server...")
                     Download.download(self.config.get_value('url').replace("api/server.php", "") + ans['url'], file_localpath)
 
                 # Mismatch filesize
-                if os.path.isfile(file_localpath) and os.stat(file_localpath).st_size != file_size:
+                if os.path.isfile(file_localpath) and not Files.is_same_size(file_localpath, file_size):
                     logging.error("file size mismatch on file: %s" % file)
                     sleep(5)
                     return False
-                
+
                 # 7z extraction, check if the <filename>.txt does exist.
                 if os.path.splitext(file_localpath)[1] == '.7z' and not os.path.isfile(txt_file):
                     # extract if needed
@@ -114,3 +115,24 @@ class Files:
                         cmd = f"./7zr{Initialize.get_os_extension()} x -aoa -o'{files_path}' -y '{file_localpath}'"
                     os.system(cmd)
         return True
+
+    @staticmethod
+    def is_same_size(filepath: Path, expected_size: int) -> bool:
+        """Check if file size matches expected size.
+
+        Normalizes line endings to each platform before calculating size.
+        """
+        if not os.path.isfile(filepath):
+            return False
+        # Try current size first.
+        if os.stat(filepath).st_size == expected_size:
+            return True
+        # Try the other line ending normalization.
+        with open(filepath, 'r', newline='', encoding='utf-8') as f:
+            content = f.read()
+        if "\r\n" in content:
+            normalized_content = content.replace("\r\n", "\n")
+        else:
+            normalized_content = content.replace("\r", "\r\n")
+        normalized_size = len(normalized_content.encode('utf-8'))
+        return normalized_size == expected_size
