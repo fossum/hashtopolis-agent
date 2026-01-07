@@ -14,7 +14,7 @@ RUN groupadd vscode && useradd -rm -d /app -s /bin/bash -g vscode -u 1001 vscode
 
 RUN apt-get update \
     && apt-get install python3 python3-pip -y \
-    && apt-get install git -y 
+    && apt-get install git zip -y
 
 # Install Intel OpenCL Runtime
 RUN cd /tmp \

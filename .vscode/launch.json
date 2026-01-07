@@ -2,11 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Main: Production",
             "type": "python",
             "request": "launch",
             "program": ".",
-            "args": ["--url", "http://hashtopolis/api/server.php", "--debug", "--voucher", "devvoucher"],
+            "args": ["--url", "http://hashtopolis.thefoss.org/api/server.php", "--debug", "--voucher", "A4m4hkyc", "--disable-update"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Debug Main",
+            "type": "python",
+            "request": "launch",
+            "program": "__main__.py",
+            "args": ["--debug", "--voucher", "devvoucher", "--disable-update"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
