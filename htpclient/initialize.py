@@ -1,5 +1,6 @@
 import uuid
 from time import sleep
+from urllib.parse import urlparse, urlunparse
 
 from htpclient.dicts import *
 from htpclient.helpers import *
@@ -173,7 +174,7 @@ class Initialize:
                 query['cpu-only'] = True
 
             req = JsonRequest(query)
-            ans = req.execute(args.ignore_cert)
+            ans = req.execute(getattr(args, 'ignore_cert', False))
             if ans is None:
                 logging.error("Request failed!")
                 self.__check_token(args)
@@ -187,16 +188,49 @@ class Initialize:
                 logging.info("Successfully registered!")
 
     def __check_cert(self, args):
+        self.config.set_value('ignore-cert', bool(getattr(args, 'ignore_cert', False)))
+
         cert = self.config.get_value('cert')
         if not cert:
-            if args.cert is not None:
+            if getattr(args, 'cert', None):
                 cert = os.path.abspath(args.cert)
                 logging.debug("Setting cert to: " + cert)
                 self.config.set_value('cert', cert)
-                
+
         if cert:
             Session().s.cert = cert
             logging.debug("Configuration session cert to: " + cert)
+
+        ca_cert = self.config.get_value('ca-cert')
+        if not ca_cert:
+            if getattr(args, 'ca_cert', None):
+                ca_cert = os.path.abspath(args.ca_cert)
+                logging.debug("Setting CA cert bundle to: " + ca_cert)
+                self.config.set_value('ca-cert', ca_cert)
+
+    @staticmethod
+    def __normalize_api_url(url):
+        url = url.strip()
+        if not url:
+            return url
+
+        if '://' not in url:
+            url = 'https://' + url
+
+        parsed = urlparse(url)
+        path = parsed.path or ''
+        if path.endswith('/api/server.php'):
+            normalized_path = path
+        elif path in ['', '/']:
+            normalized_path = '/api/server.php'
+        elif path.endswith('/'):
+            normalized_path = path + 'api/server.php'
+        elif path.endswith('.php'):
+            normalized_path = path
+        else:
+            normalized_path = path + '/api/server.php'
+
+        return urlunparse(parsed._replace(path=normalized_path, params='', query='', fragment=''))
 
     def __check_url(self, args):
         if not self.config.get_value('url'):
@@ -205,13 +239,14 @@ class Initialize:
                 url = input("Please enter the url to the API of your Hashtopolis installation:\n").strip()
             else:
                 url = args.url
+            url = self.__normalize_api_url(url)
             logging.debug("Setting url to: " + url)
             self.config.set_value('url', url)
         else:
             return
         query = dict_testConnection.copy()
         req = JsonRequest(query)
-        ans = req.execute()
+        ans = req.execute(getattr(args, 'ignore_cert', False))
         if ans is None:
             logging.error("Connection test failed!")
             self.config.set_value('url', '')

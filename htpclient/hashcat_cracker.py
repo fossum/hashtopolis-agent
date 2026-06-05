@@ -85,6 +85,32 @@ class HashcatCracker:
             return "15"
         return "1,2,3,4" # new outfile format
 
+    @staticmethod
+    def sanitize_hashcat_options(command):
+        if not command:
+            return ''
+        patterns = [
+            r'--pw-(min|max)(=\S+|\s+\S+)?',
+            r'--elem-cnt-(min|max)(=\S+|\s+\S+)?',
+            r'--wl-dist-len(=\S+|\s+\S+)?',
+            r'--dupe-check-disable',
+            r'--save-pos-disable',
+        ]
+        for pattern in patterns:
+            command = re.sub(rf'(^|\s)"?{pattern}"?(?=\s|$)', ' ', command)
+        command = re.sub(r'\s{2,}', ' ', command)
+        return command.strip()
+
+
+    @staticmethod
+    def ensure_hashlist_first(command, hashlist_path):
+        token = f'"{hashlist_path}"'
+        if token not in command:
+            return f'{token} {command}'.strip()
+        command = command.replace(token, ' ')
+        command = re.sub(r'\s{2,}', ' ', command).strip()
+        return f'{token} {command}'.strip()
+
     def build_command(self, task, chunk):
         args = []
 
@@ -119,9 +145,12 @@ class HashcatCracker:
             args.append(f"--remove-timer={task['statustimer']}")
 
         files = update_files(task['attackcmd'])
+        files = self.sanitize_hashcat_options(files)
         files = files.replace(task['hashlistAlias'], f'"{hashlist_file}"')
+        files = re.sub(r'\s{2,}', ' ', files).strip()
+        files = self.ensure_hashlist_first(files, hashlist_file)
         args.append(files)
-        args.append(task['cmdpars'])
+        args.append(self.sanitize_hashcat_options(task['cmdpars']))
 
 
 
@@ -136,7 +165,7 @@ class HashcatCracker:
     def build_pipe_command(self, task, chunk):
         # call the command with piping
         pre_args = " --stdout -s " + str(chunk['skip']) + " -l " + str(chunk['length']) + ' '
-        pre_args += update_files(task['attackcmd']).replace(task['hashlistAlias'], '')
+        pre_args += self.sanitize_hashcat_options(update_files(task['attackcmd']).replace(task['hashlistAlias'], ' '))
         post_args = " --machine-readable --quiet --status --remove --restore-disable --potfile-disable --session=hashtopolis"
         post_args += " --status-timer " + str(task['statustimer'])
         post_args += " --outfile-check-timer=" + str(task['statustimer'])
@@ -144,7 +173,7 @@ class HashcatCracker:
         post_args += " -o '" + self.config.get_value('hashlists-path') + "/" + str(task['hashlistId']) + ".out' --outfile-format=" + self.get_outfile_format() + " -p \"" + str(chr(9)) + "\""
         post_args += " --remove-timer=" + str(task['statustimer'])
         post_args += " '" + self.config.get_value('hashlists-path') + "/" + str(task['hashlistId']) + "'"
-        return f"'{self.callPath}'" + pre_args + " | " + f"'{self.callPath}'" + post_args + task['cmdpars']
+        return f"'{self.callPath}'" + pre_args + " | " + f"'{self.callPath}'" + post_args + " " + self.sanitize_hashcat_options(task['cmdpars'])
 
     # DEPRECATED
     def build_prince_command(self, task, chunk):
@@ -153,7 +182,16 @@ class HashcatCracker:
             binary = "./" + binary + "bin"
         else:
             binary += "exe"
+        # Extract prince options from attackcmd
+        prince_opts = []
+        for opt in ['--pw-min', '--pw-max', '--elem-cnt-min', '--elem-cnt-max', '--wl-dist-len']:
+            match = re.search(rf'(?:\s|^)({opt}(?:=\S+|\s+(?!-)\S+)?)', task['attackcmd'])
+            if match:
+                prince_opts.append(match.group(1))
+        
         pre_args = " -s " + str(chunk['skip']) + " -l " + str(chunk['length']) + ' '
+        if prince_opts:
+            pre_args += " ".join(prince_opts) + " "
         pre_args += get_wordlist(update_files(task['attackcmd']).replace(task['hashlistAlias'], ''))
         post_args = " --machine-readable --quiet --status --remove --restore-disable --potfile-disable --session=hashtopolis"
         post_args += " --status-timer " + str(task['statustimer'])
@@ -163,7 +201,7 @@ class HashcatCracker:
         post_args += " --remove-timer=" + str(task['statustimer'])
         post_args += " ../../hashlists/" + str(task['hashlistId'])
         post_args += get_rules_and_hl(update_files(task['attackcmd']), task['hashlistAlias']).replace(task['hashlistAlias'], '')
-        return binary + pre_args + " | " + self.callPath + post_args + task['cmdpars']
+        return binary + pre_args + " | " + self.callPath + post_args + " " + self.sanitize_hashcat_options(task['cmdpars'])
 
     def build_preprocessor_command(self, task, chunk, preprocessor):
         binary_path = Path(self.config.get_value('preprocessors-path'), str(task['preprocessor']))
@@ -212,9 +250,12 @@ class HashcatCracker:
         post_args.append(f'"{hashlist_file}"')
 
         files = update_files(task['attackcmd'])
-        files = files.replace(task['hashlistAlias'] + " ", "")
+        files = self.sanitize_hashcat_options(files)
+        files = files.replace(task['hashlistAlias'], ' ')
+        files = re.sub(r'(^|\s)--(?=\s|$)', ' ', files)
+        files = re.sub(r'\s{2,}', ' ', files).strip()
         post_args.append(files)
-        post_args.append(task['cmdpars'])
+        post_args.append(self.sanitize_hashcat_options(task['cmdpars']))
 
         pre_args = ' '.join(pre_args)
         post_args = ' '.join(post_args)
@@ -447,9 +488,12 @@ class HashcatCracker:
 
         task = task.get_task()  # TODO: refactor this to be better code
         files = update_files(task['attackcmd'])
-        files = files.replace(task['hashlistAlias'] + " ", "")
+        files = self.sanitize_hashcat_options(files)
+        files = files.replace(task['hashlistAlias'], f'"{Path(self.config.get_value("hashlists-path"), str(task["hashlistId"]))}"')
+        files = re.sub(r'\s{2,}', ' ', files).strip()
+        files = self.ensure_hashlist_first(files, Path(self.config.get_value('hashlists-path'), str(task['hashlistId'])))
 
-        full_cmd = f"{self.callPath} --keyspace --quiet {files} {task['cmdpars']}"
+        full_cmd = f"{self.callPath} --keyspace --quiet {files} {self.sanitize_hashcat_options(task['cmdpars'])}"
 
         if 'useBrain' in task and task['useBrain']:
             full_cmd = f"{full_cmd} -S"
@@ -482,7 +526,16 @@ class HashcatCracker:
             binary = "./" + binary + "bin"
         else:
             binary += "exe"
-        full_cmd = binary + " --keyspace " + get_wordlist(update_files(task['attackcmd'], True).replace(task['hashlistAlias'], ""))
+        prince_opts = []
+        for opt in ['--pw-min', '--pw-max', '--elem-cnt-min', '--elem-cnt-max', '--wl-dist-len']:
+            match = re.search(rf'(?:\s|^)({opt}(?:=\S+|\s+(?!-)\S+)?)', task['attackcmd'])
+            if match:
+                prince_opts.append(match.group(1))
+                
+        full_cmd = binary + " --keyspace "
+        if prince_opts:
+            full_cmd += " ".join(prince_opts) + " "
+        full_cmd += get_wordlist(update_files(task['attackcmd'], True).replace(task['hashlistAlias'], ""))
         if Initialize.get_os() == 1:
             full_cmd = full_cmd.replace("/", '\\')
         try:
@@ -640,6 +693,7 @@ class HashcatCracker:
 
         if 'usePrince' in task and task['usePrince']:
             attackcmd = get_rules_and_hl(update_files(task['attackcmd']))
+            attackcmd = self.sanitize_hashcat_options(attackcmd)
             # Replace #HL# with the real hashlist
             attackcmd = attackcmd.replace(task['hashlistAlias'], f'"{hashlist_path}"')
 
@@ -647,18 +701,22 @@ class HashcatCracker:
 
             # This dict is purely used for benchmarking with prince
             args.append('example.dict')
-            args.append(task['cmdpars'])
+            args.append(self.sanitize_hashcat_options(task['cmdpars']))
         else:
             attackcmd = update_files(task['attackcmd'])
+            attackcmd = self.sanitize_hashcat_options(attackcmd)
 
-            # Replace #HL# with the real hashlist
-            attackcmd = attackcmd.replace(task['hashlistAlias'], f'"{hashlist_path}"')
+            # Ensure the hashlist is passed as the first positional argument in benchmark mode.
+            attackcmd = attackcmd.replace(task['hashlistAlias'], ' ')
             attackcmd = re.sub(r'--increment(\s+|$)', '', attackcmd)
             attackcmd = re.sub(r'--increment-(max|min)(=\S+|\s+\S+)?\s*', '', attackcmd)
-            attackcmd = attackcmd.replace('--', f'"{hashlist_path}"')
+            # Remove standalone placeholder separators like "--"; hashlist is added explicitly.
+            attackcmd = re.sub(r'(^|\s)--(?=\s|$)', ' ', attackcmd)
+            attackcmd = re.sub(r'\s{2,}', ' ', attackcmd).strip()
 
+            args.append(f'"{hashlist_path}"')
             args.append(attackcmd)
-            args.append(task['cmdpars'])
+            args.append(self.sanitize_hashcat_options(task['cmdpars']))
         if 'usePreprocessor' in task and task['usePreprocessor']:
             args.append('example.dict')
         if 'useBrain' in task and task['useBrain']:
@@ -669,6 +727,7 @@ class HashcatCracker:
 
         full_cmd = ' '.join(args)
         full_cmd = f"{self.callPath} {full_cmd}"
+        full_cmd = self.sanitize_hashcat_options(full_cmd)
 
         # Run the benchmark.
         output = b''

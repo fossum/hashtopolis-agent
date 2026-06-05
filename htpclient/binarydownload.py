@@ -104,30 +104,29 @@ class BinaryDownload:
         query['type'] = 'prince'
         req = JsonRequest(query)
         ans = req.execute()
-        if ans is None:
-            logging.error("Failed to load prince!")
-            sleep(5)
-            return False
-        elif ans['response'] != 'SUCCESS' or not ans['url']:
-            logging.error("Getting prince failed: " + str(ans))
-            sleep(5)
-            return False
+        
+        prince_url = None
+        if ans is not None and ans.get('response') == 'SUCCESS' and ans.get('url'):
+            prince_url = ans['url']
         else:
-            if not Download.download(ans['url'], "prince.7z"):
-                logging.error("Download of prince failed!")
-                sleep(5)
-                return False
-            if Initialize.get_os() == 1:
-                os.system("7zr" + Initialize.get_os_extension() + " x -otemp prince.7z")
-            else:
-                os.system("./7zr" + Initialize.get_os_extension() + " x -otemp prince.7z")
-            for name in os.listdir("temp"):  # this part needs to be done because it is compressed with the main subfolder of prince
-                if os.path.isdir("temp/" + name):
-                    os.rename("temp/" + name, "prince")
-                    break
-            os.unlink("prince.7z")
-            os.rmdir("temp")
-            logging.debug("PRINCE downloaded and extracted")
+            logging.warning("Failed to get PRINCE download URL from server, falling back to official GitHub release...")
+            prince_url = "https://github.com/hashcat/princeprocessor/releases/download/v0.22/princeprocessor-0.22.7z"
+            
+        if not Download.download(prince_url, "prince.7z"):
+            logging.error("Download of prince failed!")
+            sleep(5)
+            return False
+        if Initialize.get_os() == 1:
+            os.system("7zr" + Initialize.get_os_extension() + " x -otemp prince.7z")
+        else:
+            os.system("./7zr" + Initialize.get_os_extension() + " x -otemp prince.7z")
+        for name in os.listdir("temp"):  # this part needs to be done because it is compressed with the main subfolder of prince
+            if os.path.isdir("temp/" + name):
+                os.rename("temp/" + name, "prince")
+                break
+        os.unlink("prince.7z")
+        os.rmdir("temp")
+        logging.debug("PRINCE downloaded and extracted")
         return True
 
     def check_preprocessor(self, task):

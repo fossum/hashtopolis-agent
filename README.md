@@ -31,9 +31,8 @@ Please note:
 ### Command Line Arguments
 
 ```
-usage: python3 hashtopolis.zip [-h] [--de-register] [--version] [--number-only] [--disable-update] [--debug] [--voucher VOUCHER] [--url URL]
-                               [--cert CERT] [--files-path FILES_PATH] [--crackers-path CRACKERS_PATH] [--hashlists-path HASHLISTS_PATH]
-                               [--preprocessors-path PREPROCESSORS_PATH] [--zaps-path ZAPS_PATH] [--cpu-only]
+usage: python3 hashtopolis.zip [-h] [--de-register] [--version] [--number-only] [--disable-update] [--debug] [--voucher VOUCHER] [--url URL] [--cert CERT] [--ca-cert CA_CERT] [--files-path FILES_PATH]
+                               [--crackers-path CRACKERS_PATH] [--hashlists-path HASHLISTS_PATH] [--preprocessors-path PREPROCESSORS_PATH] [--zaps-path ZAPS_PATH] [--cpu-only]
 
 Hashtopolis Client v0.7.4
 
@@ -47,6 +46,7 @@ optional arguments:
   --voucher VOUCHER     voucher to use to automatically register
   --url URL             URL to Hashtopolis client API
   --cert CERT           Client TLS cert bundle for Hashtopolis client API
+  --ca-cert CA_CERT     CA bundle path used to verify the server TLS certificate
   --files-path FILES_PATH
                         Use given folder path as files location
   --crackers-path CRACKERS_PATH
@@ -92,6 +92,7 @@ When you run the client for the first time it will ask automatically for all the
 | proxies               | object  |         | Specify proxies e.g. `"proxies": {"https": "localhost:8433"}`              |
 | auth-user             | string  |         | HTTP Basic Auth user                                                       |
 | auth-password         | string  |         | HTTP Basic Auth password                                                   |
+| ca-cert               | string  |         | Path to CA bundle used for server certificate verification                 |
 | outfile-history       | boolean | false   | Keep old hashcat outfiles with founds and not getting them overwritten     |
 | files-path            | string  |         | Use given folder path as files location                                    |
 | crackers-path         | string  |         | Use given folder path as crackers location                                 |

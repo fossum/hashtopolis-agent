@@ -84,8 +84,10 @@ def get_wordlist(command):
     for index, part in enumerate(split):
         if part[0] == '-':
             continue
-        elif index == 0 or split[index - 1][0] != '-':
-            return part
+        # If the previous token was -r or --rules-file, this token is a rules file, not the wordlist.
+        if index > 0 and split[index - 1] in ['-r', '--rules-file']:
+            continue
+        return part
     return ''
 
 
@@ -102,13 +104,7 @@ def get_rules_and_hl(command, alias):
 
 
 def clean_list(element_list):
-    index = 0
-    for part in element_list:
-        if not part:
-            del element_list[index]
-            index -= 1
-        index += 1
-    return element_list
+    return [part for part in element_list if part]
 
 
 # the prince flag is deprecated

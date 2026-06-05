@@ -124,15 +124,49 @@ class Files:
         """
         if not os.path.isfile(filepath):
             return False
+        
         # Try current size first.
-        if os.stat(filepath).st_size == expected_size:
+        try:
+            actual_size = os.stat(filepath).st_size
+        except OSError:
+            return False
+            
+        if actual_size == expected_size:
             return True
-        # Try the other line ending normalization.
-        with open(filepath, 'r', newline='', encoding='utf-8') as f:
-            content = f.read()
-        if "\r\n" in content:
-            normalized_content = content.replace("\r\n", "\n")
-        else:
-            normalized_content = content.replace("\r", "\r\n")
-        normalized_size = len(normalized_content.encode('utf-8'))
-        return normalized_size == expected_size
+            
+        # Read file memory-efficiently in binary mode to avoid encoding errors and OOMs.
+        try:
+            crlf_count = 0
+            lf_count_no_cr = 0
+            last_char = b''
+            
+            with open(filepath, 'rb') as f:
+                while True:
+                    chunk = f.read(1024 * 1024)  # 1MB chunk
+                    if not chunk:
+                        break
+                    
+                    crlf_count += chunk.count(b'\r\n')
+                    if last_char == b'\r' and chunk.startswith(b'\n'):
+                        crlf_count += 1
+                        
+                    lf_chunk = chunk.count(b'\n')
+                    lf_no_cr = lf_chunk - chunk.count(b'\r\n')
+                    if last_char == b'\r' and chunk.startswith(b'\n'):
+                        lf_no_cr -= 1
+                    
+                    lf_count_no_cr += lf_no_cr
+                    last_char = chunk[-1:]
+            
+            # Case 1: Convert CRLF to LF
+            if actual_size - crlf_count == expected_size:
+                return True
+                
+            # Case 2: Convert LF to CRLF
+            if actual_size + lf_count_no_cr == expected_size:
+                return True
+                
+        except Exception:
+            pass
+            
+        return False

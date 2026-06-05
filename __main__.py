@@ -9,6 +9,7 @@ from time import sleep
 
 import psutil as psutil
 import argparse
+import requests
 
 from htpclient.binarydownload import BinaryDownload
 from htpclient.chunk import Chunk
@@ -329,6 +330,7 @@ if __name__ == "__main__":
     parser.add_argument('--voucher', type=str, required=False, help='voucher to use to automatically register')
     parser.add_argument('--url', type=str, required=False, help='URL to Hashtopolis client API')
     parser.add_argument('--cert', type=str, required=False, help='Client TLS cert bundle for Hashtopolis client API')
+    parser.add_argument('--ca-cert', type=str, required=False, help='CA bundle path used to verify the server TLS certificate')
     parser.add_argument('--files-path', type=str, required=False, help='Use given folder path as files location')
     parser.add_argument('--crackers-path', type=str, required=False, help='Use given folder path as crackers location')
     parser.add_argument('--hashlists-path', type=str, required=False, help='Use given folder path as hashlists location')

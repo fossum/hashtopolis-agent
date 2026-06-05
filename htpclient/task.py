@@ -38,6 +38,10 @@ class Task:
             elif ans['taskId'] == -1:
                 self.taskId = -1
                 return
+            # Automatically detect if PRINCE options are in attackcmd and force usePrince
+            if 'attackcmd' in ans and any(opt in ans['attackcmd'] for opt in ['--pw-min', '--pw-max', '--elem-cnt-min', '--elem-cnt-max']):
+                ans['usePrince'] = True
+                logging.info("Detected PRINCE options in attackcmd, forcing usePrince = True")
             self.task = ans
             self.taskId = ans['taskId']
             logging.info("Got task with id: " + str(ans['taskId']))
