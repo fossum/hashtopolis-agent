@@ -12,10 +12,19 @@ class Task:
         self.task = None
         self.config = Config()
         self.preprocessor = None
+        self.sleep_inhibitor = None
+
+    def _update_inhibit(self):
+        if self.sleep_inhibitor:
+            if self.taskId != 0:
+                self.sleep_inhibitor.inhibit()
+            else:
+                self.sleep_inhibitor.release()
 
     def reset_task(self):
         self.task = None
         self.taskId = 0
+        self._update_inhibit()
 
     def load_task(self):
         if self.taskId != 0:
@@ -37,6 +46,7 @@ class Task:
                 return
             elif ans['taskId'] == -1:
                 self.taskId = -1
+                self._update_inhibit()
                 return
             # Automatically detect if PRINCE options are in attackcmd and force usePrince
             if 'attackcmd' in ans and any(opt in ans['attackcmd'] for opt in ['--pw-min', '--pw-max', '--elem-cnt-min', '--elem-cnt-max']):
@@ -44,6 +54,7 @@ class Task:
                 logging.info("Detected PRINCE options in attackcmd, forcing usePrince = True")
             self.task = ans
             self.taskId = ans['taskId']
+            self._update_inhibit()
             logging.info("Got task with id: " + str(ans['taskId']))
 
     def get_task(self):

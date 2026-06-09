@@ -24,6 +24,7 @@ from htpclient.dicts import *
 import logging
 
 from htpclient.task import Task
+from htpclient.sleep_inhibitor import create_sleep_inhibitor
 
 CONFIG = None
 binaryDownload = None
@@ -177,7 +178,9 @@ def loop():
     global binaryDownload, CONFIG
 
     logging.debug("Entering loop...")
+    sleep_inhibitor = create_sleep_inhibitor(CONFIG)
     task = Task()
+    task.sleep_inhibitor = sleep_inhibitor
     chunk = Chunk()
     files = Files()
     hashlist = Hashlist()
