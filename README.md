@@ -15,6 +15,16 @@ Following python packages are required:
 * requests
 * psutil
 
+### NVIDIA CUDA
+
+If you want to use your NVIDIA GPU with hashcat you need to install the NVIDIA CUDA Toolkit on your agent system. 
+
+Ubuntu:
+
+```bash
+sudo apt install nvidia-cuda-toolkit
+```
+
 ## Manual
 
 You can either download the agent from the Hashtopolis new agent page or you can use the url shown there to download the agent with 
