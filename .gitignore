@@ -1,17 +1,29 @@
+# User Secrets
+.env
+
+# Runtime Files
+*.log
+__pycache__
+lock.pid
+venv
+
+# Downloaded files
+crackers
+files
+hashlist_*
+hashlists
+preprocessors
+prince
+
+# IDE files
+.idea
+
+# Test files
+*.json
+!/tests/*.json
+
+# Uncategorized
 *.iml
 *.exe
 7zr
-*.log
-*.json
-!/tests/*.json
-crackers
-preprocessors
-prince
-files
-hashlists
-__pycache__
 *.zip
-.idea
-venv
-lock.pid
-.env
