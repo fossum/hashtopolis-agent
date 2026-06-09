@@ -1,0 +1,12 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Truncate Log File",
+            "type": "shell",
+            "command": "tail -c 1M client.log > /tmp/client.log && mv /tmp/client.log ./client.log"
+        }
+    ]
+}
