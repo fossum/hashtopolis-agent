@@ -25,6 +25,12 @@ Ubuntu:
 sudo apt install nvidia-cuda-toolkit
 ```
 
+Kali VM:
+
+```bash
+sudo apt install nvidia-opencl-icd
+```
+
 ## Manual
 
 You can either download the agent from the Hashtopolis new agent page or you can use the url shown there to download the agent with 

@@ -9,6 +9,7 @@ User=%%USER%%
 Group=%%GROUP%%
 WorkingDirectory=%%WORKDIR%%
 ExecStart=%%PYTHON%% %%WORKDIR%%
+ExecStop=-/usr/bin/rm -f %%WORKDIR%%/lock.pid
 
 [Install]
 WantedBy=multi-user.target
