@@ -1,0 +1,14 @@
+[Unit]
+Description=Hashtopolis distributed hashing service.
+After=network.target
+
+[Service]
+Restart=always
+RestartSec=60
+User=%%USER%%
+Group=%%GROUP%%
+WorkingDirectory=%%WORKDIR%%
+ExecStart=%%PYTHON%% %%WORKDIR%%
+
+[Install]
+WantedBy=multi-user.target
