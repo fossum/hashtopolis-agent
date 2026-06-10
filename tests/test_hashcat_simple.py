@@ -40,8 +40,10 @@ class HashcatSimple(unittest.TestCase):
         if sys.platform != 'linux':
             return
         # Clean up cracker folder
-        if os.path.exists('crackers/1'):
-            shutil.rmtree('crackers/1')
+        config = Config()
+        crackers_path = Path(config.get_value('crackers-path'), '1')
+        if os.path.exists(crackers_path):
+            shutil.rmtree(crackers_path)
 
         #TODO: Delete tasks / hashlist to ensure clean
         #TODO: Verify setup agent
@@ -177,8 +179,10 @@ class HashcatSimple(unittest.TestCase):
             return
 
         # Clean up cracker folder
-        if os.path.exists('crackers/1'):
-            shutil.rmtree('crackers/1')
+        config = Config()
+        crackers_path = Path(config.get_value('crackers-path'), '1')
+        if os.path.exists(crackers_path):
+            shutil.rmtree(crackers_path)
 
         #TODO: Delete tasks / hashlist to ensure clean
         #TODO: Verify setup agent

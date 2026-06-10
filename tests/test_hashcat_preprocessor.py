@@ -58,7 +58,8 @@ class HashcatPreprocessor(unittest.TestCase):
         obj = Task_v2(**payload)
         obj.save()
         preprocessor_id = payload.get('preprocessorId')
-        preprocessor_path = Path('preprocessors', str(preprocessor_id))
+        config = Config()
+        preprocessor_path = Path(config.get_value('preprocessors-path'), str(preprocessor_id))
         if os.path.exists(preprocessor_path):
             shutil.rmtree(preprocessor_path)
 
