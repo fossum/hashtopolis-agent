@@ -136,3 +136,13 @@ class Files:
             normalized_content = content.replace("\r", "\r\n")
         normalized_size = len(normalized_content.encode('utf-8'))
         return normalized_size == expected_size
+
+    @staticmethod
+    def get_normalized_hash(filepath: Path):
+        """Calculate hash of file with normalized line endings"""
+        hasher = hashlib.sha256()
+        with open(filepath, 'r', newline='', encoding='utf-8') as f:
+            content = f.read().replace('\r\n', '\n').replace('\r', '\n')
+            hasher.update(content.encode('utf-8'))
+        return hasher.hexdigest()
+
