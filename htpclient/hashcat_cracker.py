@@ -15,7 +15,7 @@ from htpclient.hashcat_status import HashcatStatus
 from htpclient.initialize import Initialize
 from htpclient.jsonRequest import JsonRequest
 from htpclient.helpers import send_error, update_files, kill_hashcat, get_bit, print_speed, get_rules_and_hl, get_wordlist, escape_ansi
-from htpclient.dicts import *
+from htpclient.dicts import copy_and_set_token, dict_clientError, dict_sendProgress
 
 
 class HashcatCracker:
@@ -227,7 +227,7 @@ class HashcatCracker:
         if 'enforcePipe' in task and task['enforcePipe']:
             logging.info("Enforcing pipe command because of task setting...")
             self.usePipe = True
-        if 'usePrince' in task and task['usePrince']:  # DEPRECATED
+        if task.uses_prince():  # DEPRECATED
             full_cmd = self.build_prince_command(task, chunk)
         elif 'usePreprocessor' in task and task['usePreprocessor']:
             full_cmd = self.build_preprocessor_command(task, chunk, preprocessor)
@@ -324,7 +324,7 @@ class HashcatCracker:
                         # test if we have a low utility
                         # not allowed if brain is used
                         if enable_piping and not self.uses_slow_hash_flag and ('useBrain' not in task or not task['useBrain']) and 'slowHash' in task and task['slowHash'] and not self.usePipe:
-                            if task['files'] and not ('usePrince' in task and task['usePrince']) and not ('usePreprocessor' in task and task['usePreprocessor']) and 1 < self.statusCount < 10 and status.get_util() != -1 and status.get_util() < piping_threshold:
+                            if task['files'] and not task.uses_prince() and not ('usePreprocessor' in task and task['usePreprocessor']) and 1 < self.statusCount < 10 and status.get_util() != -1 and status.get_util() < piping_threshold:
                                 # we need to try piping -> kill the process and then wait for issuing the chunk again
                                 self.usePipe = True
                                 chunk_start = int(status.get_progress_total() / (chunk['skip'] + chunk['length']) * chunk['skip'])
@@ -373,7 +373,7 @@ class HashcatCracker:
                             query = copy_and_set_token(dict_sendProgress, self.config.get_value('token'))
                             query['chunkId'] = chunk['chunkId']
                             query['keyspaceProgress'] = status.get_curku()
-                            if (self.usePipe or 'usePrince' in task and task['usePrince'] or 'usePreprocessor' in task and task['usePreprocessor']) and status.get_curku() == 0:
+                            if (self.usePipe or task.uses_prince() or 'usePreprocessor' in task and task['usePreprocessor']) and status.get_curku() == 0:
                                 query['keyspaceProgress'] = chunk['skip']
                             query['relativeProgress'] = relative_progress
                             query['speed'] = speed
@@ -440,7 +440,7 @@ class HashcatCracker:
                         time.sleep(0.1)  # we set a minimal sleep to avoid overreaction of the client sending a huge number of errors, but it should not be slowed down too much, in case the errors are not critical and the agent can continue
 
     def measure_keyspace(self, task, chunk):
-        if 'usePrince' in task.get_task() and task.get_task()['usePrince']:
+        if task.get_task().uses_prince():
             return self.prince_keyspace(task.get_task(), chunk)
         elif 'usePreprocessor' in task.get_task() and task.get_task()['usePreprocessor']:
             return self.preprocessor_keyspace(task, chunk)
@@ -638,7 +638,7 @@ class HashcatCracker:
         hashlist_path = Path(self.config.get_value('hashlists-path'), str(task['hashlistId']))
         hashlist_out_path = Path(self.config.get_value('hashlists-path'), f"{str(task['hashlistId'])}.out")
 
-        if 'usePrince' in task and task['usePrince']:
+        if task.uses_prince():
             attackcmd = get_rules_and_hl(update_files(task['attackcmd']))
             # Replace #HL# with the real hashlist
             attackcmd = attackcmd.replace(task['hashlistAlias'], f'"{hashlist_path}"')

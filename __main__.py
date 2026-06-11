@@ -205,7 +205,7 @@ def loop():
             task.reset_task()
             continue
         # if prince is used, make sure it's downloaded (deprecated, as preprocessors are integrated generally now)
-        if 'usePrince' in task.get_task() and task.get_task()['usePrince']:
+        if task.get_task().uses_prince():
             if not binaryDownload.check_prince():
                 continue
         # if preprocessor is used, make sure it's downloaded
