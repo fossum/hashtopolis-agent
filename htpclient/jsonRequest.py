@@ -11,7 +11,7 @@ class JsonRequest:
         self.config = Config()
         self.session = Session().s
 
-    def execute(self, ignore_certificate: bool = True):
+    def execute(self, ignore_certificate: bool = False):
         try:
             logging.debug(self.data)
             r = self.session.post(
